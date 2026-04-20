@@ -236,7 +236,6 @@ All versions start as `draft`. Only `published` versions are eligible for downst
 - New entity type adds surface area to MLflow's data model and API
 - `server_json` schema evolution is upstream-dependent — MLflow must track changes to the MCP registry schema
 - Implementation spans all layers: database, store, API, client, CLI, and frontend
-- Conceptual overlap with Model Registry may confuse users unfamiliar with MCP
 
 # Alternatives
 
@@ -252,12 +251,4 @@ Suggested rollout: (1) entity model + database migration + store layer, (2) REST
 
 # Open questions
 
-1. **Mandatory fields in `server_json`**: What upstream `server.json` fields should MLflow validate as required? Recommendation: validate that `server_json` is valid JSON with at minimum a `name` field. Defer strict schema validation to avoid coupling MLflow releases to upstream schema changes.
-
-2. **`MCPObservedTool` and `MCPObservedToolSnapshot`**: The data model proposal includes entities for caching tool metadata observed from live MCP endpoints. No user story requires this today. Recommendation: defer to a follow-on RFC. The entity model is extensible — these can be added without breaking changes.
-
-3. **MCPServer-level `status` vs MCPServerVersion-level `publish_state`**: Two separate lifecycle dimensions may confuse users. Recommendation: keep both — `status` controls top-level asset visibility (e.g. retiring an entire server), `publish_state` controls per-version surfacing. But this needs community validation.
-
-4. **`update_mode` field**: The data model proposal includes `update_mode` (manual vs system-managed) on `MCPServer`. Recommendation: defer this to a follow-on. MVP should focus on manual registration. System-managed sync adds significant complexity and can be layered on later.
-
-5. **Workspace scoping**: How should workspace boundaries be enforced? Recommendation: follow existing MLflow workspace patterns — workspace is resolved via `resolve_entity_workspace_name()` and applied to all queries. No new scoping mechanism is needed.
+ToDo
