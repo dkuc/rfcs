@@ -231,6 +231,16 @@ stateDiagram-v2
 
 All versions start as `draft`. Only `published` versions are eligible for downstream surfacing. Deprecated versions remain queryable. Transitions are recorded via `last_updated_timestamp` and `last_updated_by`.
 
+### UI
+
+The MCP Servers page lives under the GenAI workflow in the sidebar, alongside Experiments, Prompts, and AI Gateway. It follows the same card-based layout used elsewhere in MLflow.
+
+![MCP Servers list view](top-level.png)
+
+The list view shows each server's name, latest version, publish state (as a colored badge), source, tool count, and tags. Users can filter by state and source, and search by name or description. A "Create MCP Server" button initiates registration.
+
+The frontend implementation follows the Skill Registry pattern: a dedicated page component, API abstraction layer, and React Query hooks under `mlflow/server/js/src/experiment-tracking/pages/mcp-servers/`.
+
 ## Drawbacks
 
 - New entity type adds surface area to MLflow's data model and API
