@@ -175,7 +175,7 @@ Router prefix: `/ajax-api/3.0/mlflow/mcp-servers`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | `/` | Create a new MCP server |
+| POST | `/register` | Register a new MCP server |
 | GET | `/` | List/search MCP servers (filterable by name, status, publish state) |
 | GET | `/{name}` | Get server details + all versions |
 | DELETE | `/{name}` | Delete a server and all versions |
