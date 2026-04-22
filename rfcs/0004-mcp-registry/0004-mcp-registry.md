@@ -63,7 +63,8 @@ Two core entities, following the Skill Registry pattern:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `name` | `str` | Primary key within workspace |
+| `workspace` | `str` | PK, scoping boundary (default `'default'`) |
+| `name` | `str` | PK, stable identifier within workspace |
 | `description` | `str?` | Mutable registry summary |
 | `status` | `active \| deprecated \| retired` | Server-level lifecycle, default `active` |
 | `tags` | `list[MCPServerTag]` | Key-value search metadata |
@@ -76,8 +77,9 @@ Two core entities, following the Skill Registry pattern:
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `name` | `str` | Parent server name |
-| `version` | `str` | Publisher-supplied (semver recommended, not enforced) |
+| `workspace` | `str` | PK, FK, inherited from parent server |
+| `name` | `str` | PK, FK, parent server name |
+| `version` | `str` | PK, publisher-supplied (semver recommended, not enforced) |
 | `server_json` | `JSON text` | Canonical immutable MCP payload |
 | `publish_state` | `draft \| published \| deprecated \| retired` | Controls downstream surfacing, default `draft` |
 | `source` | `str?` | Provenance (URL, path, etc.) |
@@ -111,6 +113,7 @@ erDiagram
     MCPServerVersion ||--o{ MCPServerTag : "has tags"
 
     MCPServer {
+        string workspace PK
         string name PK
         string description
         string status
@@ -119,6 +122,7 @@ erDiagram
     }
 
     MCPServerVersion {
+        string workspace PK,FK
         string name PK,FK
         string version PK
         text server_json
@@ -134,17 +138,19 @@ erDiagram
 Four tables, following the skill registry migration pattern:
 
 ```python
-# registered_mcp_servers
-sa.Column("name", sa.String(255), nullable=False)          # PK
+# registered_mcp_servers — PK: (workspace, name)
+sa.Column("workspace", sa.String(63), nullable=False, server_default="'default'")
+sa.Column("name", sa.String(255), nullable=False)
 sa.Column("description", sa.Text(), nullable=True)
 sa.Column("status", sa.String(32), nullable=False, default="active")
 sa.Column("creation_timestamp", sa.BigInteger())
 sa.Column("last_updated_timestamp", sa.BigInteger())
 
-# mcp_server_versions
-sa.Column("name", sa.String(255), nullable=False)          # PK, FK -> registered_mcp_servers
-sa.Column("version", sa.String(255), nullable=False)       # PK
-sa.Column("server_json", sa.Text(), nullable=False)        # canonical MCP payload
+# mcp_server_versions — PK: (workspace, name, version), FK: (workspace, name) -> registered_mcp_servers
+sa.Column("workspace", sa.String(63), nullable=False, server_default="'default'")
+sa.Column("name", sa.String(255), nullable=False)
+sa.Column("version", sa.String(255), nullable=False)
+sa.Column("server_json", sa.Text(), nullable=False)
 sa.Column("publish_state", sa.String(32), default="draft")
 sa.Column("source", sa.Text(), nullable=True)
 sa.Column("run_id", sa.String(255), nullable=True)
@@ -153,21 +159,23 @@ sa.Column("is_deployed", sa.Boolean(), default=False)
 sa.Column("creation_timestamp", sa.BigInteger())
 sa.Column("last_updated_timestamp", sa.BigInteger())
 
-# mcp_server_version_tags
-sa.Column("name", sa.String(255), nullable=False)          # PK, FK -> mcp_server_versions
-sa.Column("version", sa.String(255), nullable=False)       # PK, FK -> mcp_server_versions
-sa.Column("key", sa.String(255), nullable=False)           # PK
+# mcp_server_version_tags — PK: (workspace, name, version, key), FK: (workspace, name, version) -> mcp_server_versions
+sa.Column("workspace", sa.String(63), nullable=False, server_default="'default'")
+sa.Column("name", sa.String(255), nullable=False)
+sa.Column("version", sa.String(255), nullable=False)
+sa.Column("key", sa.String(255), nullable=False)
 sa.Column("value", sa.String(5000), nullable=True)
 
-# mcp_server_aliases
-sa.Column("name", sa.String(255), nullable=False)          # PK, FK -> registered_mcp_servers
-sa.Column("alias", sa.String(255), nullable=False)         # PK
+# mcp_server_aliases — PK: (workspace, name, alias), FK: (workspace, name) -> registered_mcp_servers
+sa.Column("workspace", sa.String(63), nullable=False, server_default="'default'")
+sa.Column("name", sa.String(255), nullable=False)
+sa.Column("alias", sa.String(255), nullable=False)
 sa.Column("version", sa.String(255), nullable=False)
 ```
 
-`server_json` is stored as `Text`, not a database-native `JSON` column, for portability across SQLite, PostgreSQL, and MySQL. Validation happens at the API layer before persistence.
+`workspace` is part of every primary key, following the Model Registry pattern (`registered_models`, `model_versions`, etc.). It defaults to `'default'` for single-tenant deployments. Foreign keys cascade through `(workspace, name)` so workspace scoping is enforced at the database level.
 
-`runtime_metadata` is also stored as `Text` (JSON-encoded dict) for the same reason.
+`server_json` and `runtime_metadata` are stored as `Text` (not database-native `JSON`) for portability across SQLite, PostgreSQL, and MySQL. Validation happens at the API layer before persistence.
 
 ### REST API
 
