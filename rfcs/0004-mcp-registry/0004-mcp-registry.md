@@ -217,6 +217,8 @@ class MlflowClient:
     def delete_mcp_server_alias(self, name: str, alias: str) -> None: ...
 ```
 
+The `MlflowClient` methods above are the low-level API. A high-level convenience module (e.g. `mlflow.genai.mcp_servers`) should also be provided, following the pattern where `mlflow.genai.skills.register_skill()` wraps `MlflowClient.create_skill()`. The exact module path depends on where the `mlflow.genai` namespace settles — models and prompts currently live at `mlflow.*` but are migrating to `mlflow.genai`.
+
 ### `server_json` handling
 
 `server_json` is the canonical MCP payload, aligned with the upstream [ServerJSON schema](https://registry.modelcontextprotocol.io/docs#/schemas/ServerJSON). It is:
